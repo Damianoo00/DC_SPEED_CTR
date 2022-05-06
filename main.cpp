@@ -5,6 +5,11 @@
 #include "../include/i2c.h"
 #include <Arduino.h>
 
+/*** SWITCHES
+LOG - log values
+SET_VALUES - get speed and current from UART
+WORK - get speed and current from sensors
+*/
 #define LOG
 #define SET_VALUES
 
@@ -57,9 +62,22 @@ void setup()
 void loop()
 {
 
+#ifdef LOG
+  /************************** Set header and params to log **********************************/
+  const String header = "time,speed_ref,speed_sensor,curr_sensor,ctr_sig";
+  const long log_parametrs[] = {millis(), speed_ref, speed_sensor, curr_sensor, PIctrl_curr.y};
+  /********************************************************************************************/
+
+  const int NumOfParams = sizeof(log_parametrs) / sizeof(log_parametrs[0]);
+  log_uart(header, log_parametrs, NumOfParams);
+#endif
+
 #ifdef WORK
-  curr_sensor = read_current(CURR_PORT, 1);
-  speed_sensor = i2c_get_value_from_slave(ENCODER_ID, 4);
+  constexpr int ShutResistance = 1;
+  curr_sensor = read_current(CURR_PORT, ShutResistance);
+
+  constexpr int NumOfBytes = 4;
+  speed_sensor = i2c_get_value_from_slave(ENCODER_ID, NumOfBytes);
 #endif
 
 #ifdef SET_VALUES
@@ -70,12 +88,4 @@ void loop()
 
   PWM_write(PWM1_port, PIctrl_curr.y);
   PWM_write(PWM2_port, -PIctrl_curr.y);
-
-#ifdef LOG
-  /*** Set params to log ***/
-  const long log_parametrs[] = {millis(), speed_ref, speed_sensor, 0, curr_sensor, PIctrl_curr.y};
-
-  const int num_of_params = sizeof(log_parametrs) / sizeof(log_parametrs[0]);
-  log_uart(log_parametrs, num_of_params);
-#endif
 }
