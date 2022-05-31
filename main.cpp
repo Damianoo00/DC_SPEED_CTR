@@ -1,3 +1,13 @@
+/**
+ * @file main.cpp
+ * @author Damian Płaskowicki (damian.plaskowicki.stud@pw.edu.pl)
+ * @brief DC Drive control with Speed and Current regulatorn on Arduino
+ * @version 0.1
+ * @date 2022-05-31
+ *
+ * @copyright Copyright (c) 2022
+ *
+ */
 #include "../include/control.h"
 #include "../include/PWM.h"
 #include "../include/sensors.h"
@@ -5,13 +15,15 @@
 #include "../include/i2c.h"
 #include <Arduino.h>
 
-/*** SWITCHES
-LOG - log values
-SET_VALUES - get speed and current from UART
-WORK - get speed and current from sensors
-*/
-#define LOG
-#define SET_VALUES
+/**
+ * @brief define or remove correct line to switch any mode {#define [param]}
+ * @param LOG define to enabel logging
+ * @param SET_VALUES define to enable getting current and speed values from UART
+ * @param WORK define to enable getting current and speed values from sensors
+ *
+ */
+
+#define WORK
 
 /***** POUT *****/
 #define PWM1_port 11
@@ -74,7 +86,7 @@ void loop()
 
 #ifdef WORK
   constexpr int ShutResistance = 1;
-  curr_sensor = read_current(CURR_PORT, ShutResistance);
+  curr_sensor = CalcCurrent(CURR_PORT, ShutResistance);
 
   constexpr int NumOfBytes = 4;
   speed_sensor = i2c_get_value_from_slave(ENCODER_ID, NumOfBytes);
