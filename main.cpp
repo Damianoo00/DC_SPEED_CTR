@@ -26,8 +26,6 @@
 #define WORK
 
 /***** POUT *****/
-#define PWM1_port 11
-#define PWM2_port 10
 #define CURR_PORT A0
 
 /*** UART params***/
@@ -64,8 +62,7 @@ void setup()
   uart_begin(BAUD, TIMEOUT);
   i2c_begin_master();
 
-  PWM_begin(PWM1_port);
-  PWM_begin(PWM2_port);
+  PWM_begin();
 
   InitPIctrl(&PIctrl_speed, Ts, Kr_v, Tr_v, max_v, min_v);
   InitPIctrl(&PIctrl_curr, Ts, Kr_i, Tr_i, max_i, min_i);
@@ -86,7 +83,7 @@ void loop()
 
 #ifdef WORK
   constexpr int ShutResistance = 1;
-  curr_sensor = CalcCurrent(CURR_PORT, ShutResistance);
+  curr_sensor = GetCurrent(CURR_PORT, ShutResistance);
 
   constexpr int NumOfBytes = 4;
   speed_sensor = i2c_get_value_from_slave(ENCODER_ID, NumOfBytes);
@@ -98,6 +95,6 @@ void loop()
   CalcPIctrl(&PIctrl_speed, speed_ref - speed_sensor);
   CalcPIctrl(&PIctrl_curr, PIctrl_speed.y - speed_sensor);
 
-  PWM_write(PWM1_port, PIctrl_curr.y);
-  PWM_write(PWM2_port, -PIctrl_curr.y);
+  constexpr int ToDuty = 100;
+  PWM_write((int)(PIctrl_curr.y * ToDuty));
 }
