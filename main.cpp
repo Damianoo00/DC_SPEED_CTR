@@ -35,18 +35,22 @@
 /*** I2C slave id ***/
 #define ENCODER_ID 8
 
+/** Electric Params **/
+constexpr int In = 1; // V
+constexpr int Vs = 6; // A
+
 /*** REG I params ***/
-const float Ts = 10e3;
-const float Kr_i = 3.2593;
-const float Tr_i = 4.6136;
-const int8_t max_i = 1;
-const int8_t min_i = -1;
+const float Ts = 0.0001f;
+const float Kr_i = 2584.44f;
+const float Tr_i = 0.0004f;
+const int8_t max_i = Vs;
+const int8_t min_i = -Vs;
 
 /*** REG V params ***/
-const float Kr_v = 2.8e-5;
-const float Tr_v = 1.5e-3;
-const int8_t max_v = 126;
-const int8_t min_v = -126;
+const float Kr_v = 79.6296f;
+const float Tr_v = 0.0012f;
+const float max_v = 1.2f * In;
+const float min_v = -1.2f * In;
 
 struct PICTRL PIctrl_curr;
 struct PICTRL PIctrl_speed;
