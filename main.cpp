@@ -23,7 +23,8 @@
  *
  */
 
-#define WORK
+#define LOG
+#define SET_VALUES
 
 /***** POUT *****/
 #define CURR_PORT A0
@@ -44,7 +45,7 @@ const float Ts = 0.0001f;
 const float Kr_i = 2584.44f;
 const float Tr_i = 0.0004f;
 const int8_t max_i = Vs;
-const int8_t min_i = -Vs;
+const int8_t min_i = 0;
 
 /*** REG V params ***/
 const float Kr_v = 79.6296f;
@@ -55,11 +56,11 @@ const float min_v = -1.2f * In;
 struct PICTRL PIctrl_curr;
 struct PICTRL PIctrl_speed;
 
-static int curr_sensor = 0;
-static int speed_sensor = 0;
+static long curr_sensor = 0;
+static long speed_sensor = 0;
 
 /* REF speed value [rad/s] */
-const int speed_ref = 300;
+const int speed_ref = 1900;
 
 void setup()
 {
@@ -77,8 +78,8 @@ void loop()
 
 #ifdef LOG
   /************************** Set header and params to log **********************************/
-  const String header = "time,speed_ref,speed_sensor,curr_sensor,ctr_sig";
-  const long log_parametrs[] = {millis(), speed_ref, speed_sensor, curr_sensor, PIctrl_curr.y};
+  const String header = "time,speed_ref,speed,current_max,current,ctr_sig";
+  const long log_parametrs[] = {millis(), (long)speed_ref * 1000, speed_sensor, (long)(max_v * 1000), curr_sensor, (long)(PIctrl_curr.y * 1000)};
   /********************************************************************************************/
 
   const int NumOfParams = sizeof(log_parametrs) / sizeof(log_parametrs[0]);
@@ -96,8 +97,8 @@ void loop()
 #ifdef SET_VALUES
   uart_recive_2_params(&curr_sensor, &speed_sensor);
 #endif
-  CalcPIctrl(&PIctrl_speed, speed_ref - speed_sensor);
-  CalcPIctrl(&PIctrl_curr, PIctrl_speed.y - speed_sensor);
+  CalcPIctrl(&PIctrl_speed, (float)speed_ref - (float)speed_sensor / 1000.0f);
+  CalcPIctrl(&PIctrl_curr, PIctrl_speed.y - (float)curr_sensor / 1000.0f);
 
   constexpr int ToDuty = 100;
   PWM_write((int)(PIctrl_curr.y * ToDuty));
