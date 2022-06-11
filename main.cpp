@@ -28,6 +28,7 @@
 
 /***** POUT *****/
 #define CURR_PORT A0
+#define PWM_PORT 10
 
 /*** UART params***/
 #define BAUD 115200
@@ -37,8 +38,8 @@
 #define ENCODER_ID 8
 
 /** Electric Params **/
-constexpr int In = 1; // V
-constexpr int Vs = 6; // A
+constexpr int In = 1; // A
+constexpr int Vs = 6; // V
 
 /*** REG I params ***/
 const float Ts = 0.0001f;
@@ -56,8 +57,8 @@ const float min_v = -1.2f * In;
 struct PICTRL PIctrl_curr;
 struct PICTRL PIctrl_speed;
 
-static long curr_sensor = 0;
-static long speed_sensor = 0;
+static int curr_sensor = 0;
+static int speed_sensor = 0;
 
 /* REF speed value [rad/s] */
 const int speed_ref = 1900;
@@ -67,7 +68,7 @@ void setup()
   uart_begin(BAUD, TIMEOUT);
   i2c_begin_master();
 
-  PWM_begin();
+  PWM_begin(PWM_PORT);
 
   InitPIctrl(&PIctrl_speed, Ts, Kr_v, Tr_v, max_v, min_v);
   InitPIctrl(&PIctrl_curr, Ts, Kr_i, Tr_i, max_i, min_i);
@@ -79,7 +80,7 @@ void loop()
 #ifdef LOG
   /************************** Set header and params to log **********************************/
   const String header = "time,speed_ref,speed,current_max,current,ctr_sig";
-  const long log_parametrs[] = {millis(), (long)speed_ref * 1000, speed_sensor, (long)(max_v * 1000), curr_sensor, (long)(PIctrl_curr.y * 1000)};
+  const long log_parametrs[] = {millis(), speed_ref, speed_sensor, (long)(max_v * 1000), curr_sensor, (long)(PIctrl_curr.y * 1000)};
   /********************************************************************************************/
 
   const int NumOfParams = sizeof(log_parametrs) / sizeof(log_parametrs[0]);
@@ -87,7 +88,7 @@ void loop()
 #endif
 
 #ifdef WORK
-  constexpr int ShutResistance = 1;
+  constexpr int ShutResistance = 500; // m Ohm
   curr_sensor = GetCurrent(CURR_PORT, ShutResistance);
 
   constexpr int NumOfBytes = 4;
@@ -97,9 +98,8 @@ void loop()
 #ifdef SET_VALUES
   uart_recive_2_params(&curr_sensor, &speed_sensor);
 #endif
-  CalcPIctrl(&PIctrl_speed, (float)speed_ref - (float)speed_sensor / 1000.0f);
+  CalcPIctrl(&PIctrl_speed, (float)speed_ref - (float)speed_sensor);
   CalcPIctrl(&PIctrl_curr, PIctrl_speed.y - (float)curr_sensor / 1000.0f);
 
-  constexpr int ToDuty = 100;
-  PWM_write((int)(PIctrl_curr.y * ToDuty));
+  PWM_write(VoltageToDuty(PIctrl_curr.y, Vs));
 }
